@@ -1,0 +1,9 @@
+{
+  "name": "dag-studio-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DAG Studio — Unified App Hub (Netlify Deploy) dengan notifikasi push",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

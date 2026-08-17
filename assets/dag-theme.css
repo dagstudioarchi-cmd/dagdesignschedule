@@ -1,0 +1,236 @@
+/* =====================================================================
+   DAG STUDIO — UNIFIED THEME  (v2 · Monochrome + Orange)
+   Dimuat SETELAH <style> bawaan tiap aplikasi, sehingga menimpa
+   variabel warna, font, dan komponen tanpa mengubah logika/HTML.
+   Title  : Futura   (fallback: Futura PT → Jost)
+   Body   : Century Gothic (fallback: URW Gothic → Didact Gothic)
+   ===================================================================== */
+
+:root{
+  /* Palet monokrom */
+  --k-black:#111111;
+  --k-ink:#1A1A1A;
+  --k-graphite:#2C2C2C;
+  --k-steel:#5B5B5B;
+  --k-silver:#9A9A9A;
+  --k-mist:#D9D9D9;
+  --k-fog:#EDEDED;
+  --k-canvas:#F4F4F4;
+  --k-paper:#FFFFFF;
+  /* Satu aksen: oranye cerah */
+  --k-orange:#FF6A00;
+  --k-orange-deep:#E85D00;
+  --k-orange-tint:#FFF0E5;
+
+  /* Font */
+  --font-title:'Futura','Futura PT','Futura Std','Jost',sans-serif;
+  --font-body:'Century Gothic','CenturyGothic','URW Gothic','URW Gothic L','Didact Gothic',sans-serif;
+
+  /* === Remap variabel lama → palet baru (mempertahankan semua rule bawaan) === */
+  --navy:var(--k-black);           /* dulu biru navy = warna primer gelap */
+  --navy-light:var(--k-graphite);
+  --navy-pale:var(--k-fog);
+  --gold:var(--k-orange);          /* dulu emas = aksen  */
+  --gold-soft:#FF8A3D;
+  --cream:var(--k-canvas);
+  --paper:var(--k-paper);
+  --ink:var(--k-ink);
+  --muted:#7A7A7A;
+  --border:#E4E4E4;
+  --danger:var(--k-orange-deep);   --danger-soft:var(--k-orange-tint);
+  --success:var(--k-black);        --success-soft:var(--k-fog);
+  --amber:var(--k-orange);         --amber-soft:var(--k-orange-tint);
+  --blue:var(--k-steel);           --blue-soft:var(--k-fog);
+  --radius:18px;
+  --shadow:0 1px 2px rgba(0,0,0,0.04), 0 10px 30px -14px rgba(0,0,0,0.18);
+}
+
+/* ---------- Tipografi ---------- */
+html,body{font-family:var(--font-body) !important;color:var(--k-ink);}
+body{background:var(--k-canvas) !important;letter-spacing:0.005em;}
+h1,h2,h3,h4,.brand .name,.brand-name,.card-title,.stat-card .value,.stat-val,
+.ov-ring .num,.progress-computed b,.empty-state .mark,.topbar h1,.proj-item .proj-name,
+.k-title,.hero-title{font-family:var(--font-title) !important;letter-spacing:0.01em;}
+h1,h2,h3{font-weight:600;}
+button,input,select,textarea,.btn,.abn-item span,.stat-card .value small,.stat-val small,
+.ov-ring .num small,.filter-bar input,.filter-bar select,.field input,.field select,.field textarea,
+.gantt-select-row select,.ov-select-row select,.workload-controls select,.kanban-controls select,
+.checklist-row input,.checklist-row select,.proj-selector,.android-bottom-nav .abn-item span,
+.bottom-nav .abn-item span{font-family:var(--font-body) !important;}
+.mono,.code-badge{font-family:'JetBrains Mono',ui-monospace,monospace !important;}
+.topbar h1{font-size:26px;letter-spacing:0.02em;}
+.topbar p{font-size:13px;}
+
+/* ---------- Sidebar: terang, item aktif pil hitam ---------- */
+.sidebar{background:var(--k-paper) !important;color:var(--k-ink) !important;border-right:1px solid var(--border);padding:22px 14px !important;}
+.sidebar .brand .name{color:var(--k-black);}
+.sidebar .brand .sub{color:var(--muted) !important;}
+.sidebar .brand .mark{filter:invert(1);}          /* logo putih → hitam di sidebar terang */
+.nav button{color:var(--k-steel) !important;border-radius:14px !important;padding:11px 14px !important;font-weight:500;}
+.nav button:hover{background:var(--k-fog) !important;color:var(--k-black) !important;}
+.nav button.active{background:var(--k-black) !important;color:#fff !important;box-shadow:none !important;}
+.nav button.active svg{opacity:1;}
+.sidebar-foot{border-top:1px solid var(--border) !important;color:var(--muted) !important;}
+.sidebar-foot button,.sidebar-foot label{color:var(--k-black) !important;}
+.sidebar-foot #sync-settings-btn{color:var(--k-orange) !important;}
+.sidebar-backdrop{background:rgba(0,0,0,0.35) !important;}
+.mobile-menu-btn{background:var(--k-paper) !important;color:var(--k-black) !important;border:1px solid var(--border) !important;border-radius:14px !important;}
+
+/* ---------- Tombol: pil ---------- */
+.btn{border-radius:999px !important;font-weight:600;padding:10px 18px;}
+.btn-primary{background:var(--k-black) !important;color:#fff !important;}
+.btn-primary:hover{background:var(--k-graphite) !important;}
+.btn-gold{background:var(--k-orange) !important;color:#fff !important;}
+.btn-gold:hover{background:var(--k-orange-deep) !important;}
+.btn-ghost{background:var(--k-paper) !important;color:var(--k-black) !important;border:1px solid var(--k-mist) !important;}
+.btn-ghost:hover{background:var(--k-fog) !important;}
+.btn-sm{padding:6px 12px !important;}
+.icon-btn{border-radius:10px !important;}
+
+/* ---------- Kartu & panel ---------- */
+.panel,.stat-card,.card,.proj-item,.pic-card,.kanban-col,.kanban-card,.modal,.report-item,.ov-phase-card,.checklist-box,.revision-log-box{
+  border-radius:var(--radius) !important;border-color:var(--border) !important;
+}
+.panel{box-shadow:var(--shadow) !important;}
+.panel-head{padding:18px 22px !important;}
+.panel-head h3{font-size:16px !important;}
+.stat-card{padding:18px 20px !important;}
+.stat-card .label,.stat-label{font-size:11px;letter-spacing:0.08em;color:var(--muted);}
+.stat-card .value,.stat-val{font-size:30px !important;color:var(--k-black) !important;font-weight:500 !important;}
+.stat-card .value small,.stat-val small{color:var(--k-orange) !important;}
+.filter-bar,.gantt-select-row,.ov-select-row,.workload-controls,.kanban-controls,.gantt-header-row,.table-wrap thead th,.kanban-col,.field input,.field select,.field textarea,.checklist-box,.revision-log-box{background:#FAFAFA !important;}
+.field input,.field select,.field textarea,.filter-bar input[type=text],.filter-bar select,.gantt-select-row select,.ov-select-row select,.workload-controls select,.kanban-controls select,.checklist-row input,.checklist-row select,.proj-selector{
+  border-radius:12px !important;border:1px solid var(--k-mist) !important;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--k-orange) !important;outline-offset:1px;background:#fff !important;}
+.field label{color:var(--k-steel) !important;letter-spacing:0.02em;}
+.progress-fill,.mini-bar-fill,.prog-bar{background:var(--k-black) !important;}
+.progress-track,.mini-bar-track,.prog-wrap{background:var(--k-fog) !important;}
+.prog-bar.on-track{background:var(--k-black) !important;}
+.prog-bar.behind,.prog-bar.gold{background:var(--k-orange) !important;}
+
+/* ---------- Badge: monokrom, oranye hanya untuk perhatian ---------- */
+.badge{border-radius:999px !important;font-weight:600;letter-spacing:0.01em;}
+.badge-navy,.badge-blue,.badge-purple,.badge-teal{background:var(--k-fog) !important;color:var(--k-graphite) !important;}
+.badge-success{background:var(--k-black) !important;color:#fff !important;}
+.badge-danger,.badge-gold{background:var(--k-orange-tint) !important;color:var(--k-orange-deep) !important;}
+.badge-muted{background:var(--k-fog) !important;color:var(--muted) !important;}
+.badge-qc{background:var(--k-orange) !important;color:#fff !important;cursor:pointer;}
+.badge-qc-ok{background:#fff !important;color:var(--k-black) !important;border:1.5px solid var(--k-black);}
+.badge-cancel{background:#fff !important;color:var(--k-silver) !important;border:1px dashed var(--k-silver);text-decoration:line-through;}
+.dep-note{background:var(--k-fog) !important;color:var(--k-graphite) !important;}
+.revision-badge,.delay-badge{background:var(--k-orange-tint) !important;color:var(--k-orange-deep) !important;}
+.code-badge{background:var(--k-fog) !important;color:var(--k-black) !important;border-radius:6px !important;}
+.checklist-count-pill{background:var(--k-fog) !important;color:var(--k-graphite) !important;}
+.kanban-col-count{background:var(--k-black) !important;color:#fff !important;}
+.weight-ok{color:var(--k-black) !important;}
+.weight-warning{color:var(--k-orange-deep) !important;}
+
+/* ---------- Gantt bar (status baru) ---------- */
+.gantt-bar{border-radius:999px !important;height:24px !important;box-shadow:none !important;}
+.gantt-bar .fill{background:rgba(255,255,255,0.28) !important;}
+.bar-belum{background:var(--k-mist) !important;} .bar-belum span{color:var(--k-graphite) !important;}
+.bar-berjalan{background:var(--k-graphite) !important;}
+.bar-selesai{background:var(--k-black) !important;}
+.bar-terlambat{background:var(--k-orange) !important;}
+.bar-tertunda,.bar-review,.bar-qcowner{background:var(--k-steel) !important;}
+.bar-cancel{background:repeating-linear-gradient(135deg,#E6E6E6 0 6px,#F7F7F7 6px 12px) !important;opacity:.85;} .bar-cancel span{color:var(--k-silver) !important;text-decoration:line-through;}
+.gantt-today{background:var(--k-orange) !important;}
+.gantt-month{color:var(--k-steel) !important;}
+.gantt-bg-lines div{border-right-color:#F0F0F0 !important;}
+.kanban-card{border-left-width:3px !important;}
+.priority-1{border-left-color:var(--k-orange) !important;}
+.priority-2{border-left-color:var(--k-black) !important;}
+.priority-3{border-left-color:var(--k-mist) !important;}
+.kanban-card .k-proj{color:var(--k-orange) !important;}
+.pic-head{background:var(--k-fog) !important;}
+
+/* ---------- Modal ---------- */
+.overlay{background:rgba(0,0,0,0.42) !important;}
+.modal{border-radius:24px !important;}
+.modal-head h3{font-size:18px !important;}
+.toast{background:var(--k-black) !important;border-radius:999px !important;}
+
+/* ---------- Bottom nav Android: putih ---------- */
+.android-bottom-nav,.bottom-nav{background:var(--k-paper) !important;border-top:1px solid var(--border) !important;box-shadow:0 -6px 20px rgba(0,0,0,0.06) !important;}
+.android-bottom-nav .abn-item,.bottom-nav .abn-item{color:var(--k-silver) !important;}
+.android-bottom-nav .abn-item.active,.bottom-nav .abn-item.active{color:var(--k-black) !important;}
+.android-bottom-nav .abn-item .abn-dot,.bottom-nav .abn-item .dot{background:var(--k-orange) !important;}
+.android-bottom-nav .abn-item:active,.bottom-nav .abn-item:active{background:var(--k-fog) !important;}
+
+/* ---------- Owner app topbar (dag-owner) ---------- */
+.topbar.owner-bar,body > .topbar{background:var(--k-black) !important;box-shadow:none !important;}
+.topbar .refresh-btn{background:rgba(255,255,255,0.12) !important;}
+
+/* ---------- Ring/donut ---------- */
+.ov-ring .num{color:var(--k-black) !important;font-size:32px !important;}
+
+/* ---------- Table ---------- */
+.table-wrap thead th{color:var(--k-steel) !important;letter-spacing:0.06em;}
+.table-wrap tbody tr:hover{background:#FAFAFA !important;}
+
+/* =====================================================================
+   DASHBOARD HERO (DAG Build) — kartu gelap + donut progres
+   ===================================================================== */
+.db-hero{display:grid;grid-template-columns:minmax(300px,1.15fr) 1fr;gap:16px;margin-bottom:22px;}
+.db-overall{background:var(--k-black);color:#fff;border-radius:26px;padding:26px 26px 22px;display:flex;gap:26px;align-items:center;position:relative;overflow:hidden;}
+.db-overall::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,106,0,0.32),transparent 65%);pointer-events:none;}
+.db-overall .db-o-title{font-family:var(--font-title);font-size:15px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:6px;}
+.db-overall .db-o-big{font-family:var(--font-title);font-size:44px;font-weight:600;line-height:1;color:#fff;}
+.db-overall .db-o-big small{font-size:18px;color:var(--k-orange);margin-left:2px;}
+.db-overall .db-o-sub{font-size:12.5px;color:rgba(255,255,255,0.65);margin-top:8px;line-height:1.55;}
+.db-overall .db-o-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;}
+.db-overall .db-o-stat{background:rgba(255,255,255,0.08);border-radius:16px;padding:10px 12px;}
+.db-overall .db-o-stat b{display:block;font-family:var(--font-title);font-size:22px;color:#fff;font-weight:500;}
+.db-overall .db-o-stat span{font-size:10.5px;color:rgba(255,255,255,0.6);letter-spacing:0.04em;text-transform:uppercase;}
+.db-donut{position:relative;flex-shrink:0;}
+.db-donut .db-donut-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-title);}
+.db-donut .db-donut-label b{font-size:34px;font-weight:600;line-height:1;color:#fff;}
+.db-donut .db-donut-label b small{font-size:15px;color:var(--k-orange);}
+.db-donut .db-donut-label span{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:4px;}
+
+.db-projects{background:var(--k-paper);border:1px solid var(--border);border-radius:26px;padding:20px 22px;box-shadow:var(--shadow);}
+.db-projects .db-p-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.db-projects .db-p-head h3{margin:0;font-size:16px;color:var(--k-black);}
+.db-projects .db-p-head span{font-size:11.5px;color:var(--muted);}
+.db-p-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.db-p-card{border:1px solid var(--border);border-radius:20px;padding:14px 12px 12px;text-align:center;cursor:pointer;background:#fff;transition:transform .15s,border-color .15s;}
+.db-p-card:hover{border-color:var(--k-black);}
+.db-p-card:active{transform:scale(0.98);}
+.db-p-card .db-p-donut{position:relative;width:96px;height:96px;margin:0 auto 10px;}
+.db-p-card .db-p-donut .db-donut-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-title);}
+.db-p-card .db-p-donut b{font-size:22px;color:var(--k-black);line-height:1;font-weight:600;}
+.db-p-card .db-p-donut b small{font-size:11px;color:var(--k-orange);}
+.db-p-card .db-p-name{font-family:var(--font-title);font-size:13.5px;color:var(--k-black);font-weight:600;line-height:1.3;}
+.db-p-card .db-p-code{font-size:10.5px;color:var(--k-orange);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:3px;}
+.db-p-card .db-p-meta{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
+.db-p-card.late{border-color:var(--k-orange);}
+.db-p-empty{padding:26px 10px;text-align:center;color:var(--muted);font-size:13px;}
+
+@media (max-width:900px){
+  .db-hero{grid-template-columns:1fr;}
+  .db-overall{padding:22px 20px;gap:18px;}
+  .db-overall .db-o-big{font-size:36px;}
+  .db-p-grid{grid-template-columns:repeat(2,1fr);}
+  .topbar h1{font-size:22px;}
+  .main{padding-left:14px !important;padding-right:14px !important;}
+}
+@media (max-width:420px){
+  .db-overall{flex-direction:column;align-items:flex-start;}
+  .db-overall .db-o-stats{width:100%;}
+}
+
+/* Status otomatis di modal tahapan */
+.gt-status-auto{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FAFAFA;border:1px dashed var(--k-mist);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--k-steel);}
+.gt-status-auto .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);}
+.gt-cancel-toggle{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--k-steel);cursor:pointer;margin-top:8px;}
+.gt-cancel-toggle input{width:16px;height:16px;accent-color:var(--k-orange);}
+
+/* Aksesibilitas & motion */
+:focus-visible{outline:2px solid var(--k-orange);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
+
+/* Fix: modal body tidak melebar melebihi layar HP (kolom grid minmax(0,1fr)) */
+.modal-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;}
+.modal-body > *{min-width:0;}
+@media (max-width:900px){.modal-body{grid-template-columns:minmax(0,1fr) !important;}}
