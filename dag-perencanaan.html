@@ -1062,6 +1062,166 @@ async function storageSet(key, value){
   localStorage.setItem(LS_PREFIX+key, value);
   return { key, value };
 }
+
+/* ========== ADAPTER SKEMA BARIS v3 (DAG Perencanaan / DESAIN) ==========
+   Mengalihkan storageGet/storageSet ke API baris, tanpa mengubah kode lain.
+   Kontrak dijaga persis: storageGet -> {key, value:<string JSON>} | null
+                          storageSet(key, <string JSON>)
+   Kunci yang belum dipetakan (mis. dag-daily-reports) diteruskan ke
+   mekanisme lama, jadi tidak ada yang hilang.
+   ====================================================================== */
+(function(){
+  'use strict';
+
+  var API = 'https://script.google.com/macros/s/AKfycbxdn6qgVpneBOjQel3AquFPLajFXNHd34FPfi1OID7uZVtpgs1Kv0l-PIrvNs9aXxqByw/exec';
+  var AKTIF = true;              // set false untuk kembali ke perilaku lama
+  if(!AKTIF) return;
+
+  var _get = storageGet, _set = storageSet;
+  var cache = {}, CACHE_MS = 4000;
+
+  function lsSet(k,v){ try{ localStorage.setItem(LS_PREFIX+k, v); }catch(e){} }
+  function lsGet(k){ try{ return localStorage.getItem(LS_PREFIX+k); }catch(e){ return null; } }
+  function bungkus(key, obj){ var s = JSON.stringify(obj); lsSet(key, s); return { key:key, value:s }; }
+
+  async function baca(tab){
+    var c = cache[tab];
+    if(c && (Date.now()-c.t) < CACHE_MS) return c.rows;
+    var r = await fetch(API+'?action=read&table='+encodeURIComponent(tab)+'&_t='+Date.now(), {cache:'no-store'});
+    var o = await r.json();
+    if(!o.ok) throw new Error(o.error||('Gagal membaca '+tab));
+    var rows = (o.rows||[]).filter(function(x){ return !x.deleted; });
+    cache[tab] = { t:Date.now(), rows:rows };
+    return rows;
+  }
+  async function kirim(body){
+    var r = await fetch(API, { method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },   // hindari preflight CORS
+      body: JSON.stringify(body) });
+    var o = await r.json();
+    if(!o.ok) throw new Error(o.error||'Gagal menyimpan');
+    return o;
+  }
+  function buang(tabs){ tabs.forEach(function(t){ delete cache[t]; }); }
+
+  /* Kunci yang dialihkan ke tab baris. Sisanya pakai jalur lama. */
+  var PETA = {
+    'dag-projects-desain':'PROJECTS_DESAIN',
+    'dag-projects':'PROJECTS_DESAIN',            // kunci lama, dibaca saat migrasi awal
+    'dag-projects-konstruksi':'PROJECTS_KONSTRUKSI',
+    'dag-schedule-desain':'SCHEDULE_DESAIN',
+    'dag-schedule':'SCHEDULE_DESAIN',
+    'dag-briefs':'BRIEFS',
+    'dag-daily-items':'DAILY_ITEMS',
+    'dag-push-subs':'PUSH_SUBS'
+  };
+
+  async function bacaTahapan(){
+    var T  = await baca('TASKS_DESAIN');
+    var CL = await baca('CHECKLIST_DESAIN');
+    var RV = await baca('REVISIONS_DESAIN');
+    var byT = {}, byR = {};
+    CL.forEach(function(c){ (byT[c.taskId]=byT[c.taskId]||[]).push(c); });
+    RV.forEach(function(r){ (byR[r.taskId]=byR[r.taskId]||[]).push(r); });
+    var urut = function(a,b){ return (Number(a.seq)||0)-(Number(b.seq)||0); };
+    return T.map(function(t){
+      return { id:t.id, projectId:t.projectId, name:t.name, start:t.start, end:t.end,
+        pic:t.pic, status:t.status, progress:Number(t.progress)||0, weight:Number(t.weight)||0,
+        dependsOn:t.dependsOn||'', notes:t.notes||'',
+        originalStart:t.originalStart||t.start, originalEnd:t.originalEnd||t.end,
+        checklist:(byT[t.id]||[]).sort(urut).map(function(c){ return {id:c.id,name:c.name,status:c.status}; }),
+        revisions:(byR[t.id]||[]).sort(urut).map(function(r){ try{ return JSON.parse(r.payload); }catch(e){ return {}; } })
+      };
+    });
+  }
+
+  function uid(p){ return p+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+  async function tulisTahapan(list){
+    var T=[], CL=[], RV=[];
+    (list||[]).forEach(function(t){
+      T.push({ id:t.id, projectId:t.projectId, name:t.name, start:t.start, end:t.end,
+        pic:t.pic, status:t.status, progress:t.progress, weight:t.weight,
+        dependsOn:t.dependsOn||'', notes:t.notes||'',
+        originalStart:t.originalStart||t.start, originalEnd:t.originalEnd||t.end, deleted:false });
+      (t.checklist||[]).forEach(function(c,i){
+        if(!c.id) c.id = uid('cl_');
+        CL.push({ id:c.id, taskId:t.id, projectId:t.projectId, seq:i+1,
+                  name:c.name, status:c.status, doneAt:c.doneAt||'', deleted:false });
+      });
+      (t.revisions||[]).forEach(function(r,i){
+        RV.push({ id:(r&&r.id)||(t.id+'_r'+i), taskId:t.id, seq:i+1,
+                  payload:JSON.stringify(r), deleted:false });
+      });
+    });
+    await kirim({ action:'batch', ops:[
+      { action:'replace', table:'TASKS_DESAIN',     rows:T  },
+      { action:'replace', table:'CHECKLIST_DESAIN', rows:CL },
+      { action:'replace', table:'REVISIONS_DESAIN', rows:RV }
+    ]});
+    buang(['TASKS_DESAIN','CHECKLIST_DESAIN','REVISIONS_DESAIN']);
+  }
+
+  storageGet = async function(key){
+    try{
+      if(key === 'dag-tasks-desain') return bungkus(key, await bacaTahapan());
+      if(key === 'dag-team-contacts'){
+        var obj = {};
+        (await baca('TEAM_CONTACTS')).forEach(function(c){ obj[c.name] = String(c.phone); });
+        return bungkus(key, obj);
+      }
+      if(key === 'dag-push-subs'){
+        return bungkus(key, (await baca('PUSH_SUBS')).map(function(s){
+          try{ return JSON.parse(s.payload); }catch(e){ return {}; } }));
+      }
+      if(PETA[key]) return bungkus(key, await baca(PETA[key]));
+      return await _get(key);                       // kunci lain: perilaku lama
+    }catch(e){
+      console.error('[DAG adapter] gagal baca '+key, e);
+      var lokal = lsGet(key);
+      if(lokal !== null) return { key:key, value:lokal };
+      return await _get(key);
+    }
+  };
+
+  storageSet = async function(key, value){
+    var dikelola = PETA[key] || key === 'dag-tasks-desain' ||
+                   key === 'dag-team-contacts' || key === 'dag-push-subs';
+    if(!dikelola) return await _set(key, value);   // kunci lain: perilaku lama
+
+    lsSet(key, value);                             // cache lokal dulu, jangan sampai hilang
+    var data; try{ data = JSON.parse(value); }catch(e){ data = []; }
+    try{
+      if(key === 'dag-tasks-desain') return await tulisTahapan(data);
+      if(key === 'dag-team-contacts'){
+        var rows = Object.keys(data||{}).map(function(n){
+          return { id:'tc_'+n.toLowerCase().split(' ').join('_'),
+                   name:n, phone:String(data[n]), deleted:false }; });
+        await kirim({ action:'replace', table:'TEAM_CONTACTS', rows:rows });
+        return buang(['TEAM_CONTACTS']);
+      }
+      if(key === 'dag-push-subs'){
+        var ps = (data||[]).map(function(s,i){
+          return { id:s.id||('ps_'+i), endpoint:(s.subscription&&s.subscription.endpoint)||'',
+                   payload:JSON.stringify(s), deleted:false }; });
+        await kirim({ action:'replace', table:'PUSH_SUBS', rows:ps });
+        return buang(['PUSH_SUBS']);
+      }
+      var tab = PETA[key];
+      await kirim({ action:'replace', table:tab,
+                    rows:(data||[]).map(function(r){ r.deleted=false; return r; }) });
+      return buang([tab]);
+    }catch(e){
+      console.error('[DAG adapter] gagal simpan '+key, e);
+      if(typeof showToast === 'function')
+        showToast('Gagal menyimpan ke Google Sheet. Data tersimpan di perangkat ini saja.');
+      throw e;                                     // biarkan app tahu, jangan diam-diam
+    }
+  };
+
+  console.log('[DAG] Adapter skema baris v3 aktif — DESAIN');
+})();
+
 function updateStorageModeBadge(){
   const el = $('storage-mode-note');
   if(!el) return;
