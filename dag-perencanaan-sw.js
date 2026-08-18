@@ -3,7 +3,7 @@
  * File nyata (bukan blob URL) supaya notifikasi push bisa membangunkan
  * service worker ini dengan andal walau app/tab sedang tertutup.
  */
-const CACHE = 'dag-perencanaan-v9';
+const CACHE = 'dag-perencanaan-v10'; // dinaikkan 18 Agu 2026 - paksa ambil HTML baru (adapter skema baris)
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add(self.location.pathname.replace('dag-perencanaan-sw.js', 'dag-perencanaan.html'))).catch(() => {}));
