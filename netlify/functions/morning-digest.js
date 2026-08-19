@@ -1,7 +1,8 @@
-const { sendToSubscriptions, sheetGet } = require('./_lib/push');
+const { sendToSubscriptions, rowsGet, pushSubsGet } = require('./_lib/push');
 
-const SYNC_URL = process.env.DAG_SYNC_URL ||
-  'https://script.google.com/macros/s/AKfycby3KgsmeC7z1kAMZ6nnhGhMviUlWQcxen5azluTiN93PWRgjr4A3wWrJpmT0EwwvVnPEw/exec';
+// API skema baris v3 (sama dengan yang dipakai adapter di dag-perencanaan.html)
+const API_URL = process.env.DAG_API_URL ||
+  'https://script.google.com/macros/s/AKfycbxdn6qgVpneBOjQel3AquFPLajFXNHd34FPfi1OID7uZVtpgs1Kv0l-PIrvNs9aXxqByw/exec';
 const APP_URL = process.env.DAG_APP_URL || 'https://dagstudiodesignschedule.netlify.app/';
 
 function todayISO() {
@@ -12,9 +13,9 @@ function todayISO() {
 
 async function run() {
   const dateISO = todayISO();
-  const [dailyItems, subscriptions] = await Promise.all([
-    sheetGet(SYNC_URL, 'dag-daily-items').catch(() => []),
-    sheetGet(SYNC_URL, 'dag-push-subs').catch(() => [])
+  const [dailyItems, subs] = await Promise.all([
+    rowsGet(API_URL, 'DAILY_ITEMS').catch(() => []),
+    pushSubsGet(API_URL).catch(() => [])
   ]);
 
   const items = Array.isArray(dailyItems) ? dailyItems.filter(d => d.date === dateISO) : [];
@@ -32,7 +33,6 @@ async function run() {
     body = `${items.length} item kerja hari ini — ${lines.join(', ')}`;
   }
 
-  const subs = Array.isArray(subscriptions) ? subscriptions.map(s => s.subscription).filter(Boolean) : [];
   if (!subs.length) return { statusCode: 200, body: 'Tidak ada subscriber terdaftar.' };
 
   const result = await sendToSubscriptions(subs, {

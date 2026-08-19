@@ -1,5 +1,9 @@
-const { sendToSubscriptions, sheetGet } = require('./_lib/push');
+const { sendToSubscriptions, sheetGet, rowsGet, pushSubsGet } = require('./_lib/push');
 
+// API skema baris v3 — untuk DAILY_ITEMS & PUSH_SUBS (data aktif app)
+const API_URL = process.env.DAG_API_URL ||
+  'https://script.google.com/macros/s/AKfycbxdn6qgVpneBOjQel3AquFPLajFXNHd34FPfi1OID7uZVtpgs1Kv0l-PIrvNs9aXxqByw/exec';
+// Webhook lama — 'dag-daily-reports' belum dipetakan ke skema baris, masih jalur lama
 const SYNC_URL = process.env.DAG_SYNC_URL ||
   'https://script.google.com/macros/s/AKfycby3KgsmeC7z1kAMZ6nnhGhMviUlWQcxen5azluTiN93PWRgjr4A3wWrJpmT0EwwvVnPEw/exec';
 const APP_URL = process.env.DAG_APP_URL || 'https://dagstudiodesignschedule.netlify.app/';
@@ -11,10 +15,10 @@ function todayISO() {
 
 async function run() {
   const dateISO = todayISO();
-  const [dailyReports, dailyItems, subscriptions] = await Promise.all([
+  const [dailyReports, dailyItems, subs] = await Promise.all([
     sheetGet(SYNC_URL, 'dag-daily-reports').catch(() => []),
-    sheetGet(SYNC_URL, 'dag-daily-items').catch(() => []),
-    sheetGet(SYNC_URL, 'dag-push-subs').catch(() => [])
+    rowsGet(API_URL, 'DAILY_ITEMS').catch(() => []),
+    pushSubsGet(API_URL).catch(() => [])
   ]);
 
   const items = Array.isArray(dailyItems) ? dailyItems.filter(d => d.date === dateISO) : [];
@@ -24,7 +28,6 @@ async function run() {
   const already = reportsList.find(r => r.date === dateISO);
   if (already) return { statusCode: 200, body: 'Laporan sore sudah masuk, tidak perlu reminder.' };
 
-  const subs = Array.isArray(subscriptions) ? subscriptions.map(s => s.subscription).filter(Boolean) : [];
   if (!subs.length) return { statusCode: 200, body: 'Tidak ada subscriber terdaftar.' };
 
   const result = await sendToSubscriptions(subs, {

@@ -53,4 +53,28 @@ async function sheetGet(syncUrl, key) {
   try { return JSON.parse(data.value); } catch (e) { return data.value; }
 }
 
-module.exports = { sendToSubscriptions, sheetGet };
+// ---- SKEMA BARIS v3 (API baru) --------------------------------------------
+// App memakai adapter skema baris: data tidak lagi ditumpuk 1 sel per key,
+// tapi disimpan sebagai baris per tabel. Endpoint: ?action=read&table=NAMA
+// Ini WAJIB dipakai untuk DAILY_ITEMS & PUSH_SUBS, kalau tidak digest terjadwal
+// akan membaca data lama yang sudah tidak diisi lagi oleh app.
+async function rowsGet(apiUrl, table) {
+  const res = await fetch(`${apiUrl}?action=read&table=${encodeURIComponent(table)}&_t=${Date.now()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Gagal baca tabel: ' + table);
+  const data = await res.json();
+  if (!data || !data.ok) throw new Error((data && data.error) || ('Gagal baca tabel: ' + table));
+  return (data.rows || []).filter(r => !r.deleted);
+}
+
+// PUSH_SUBS disimpan sebagai baris { id, endpoint, payload:<JSON string> }.
+// Kembalikan array PushSubscription siap pakai untuk web-push.
+async function pushSubsGet(apiUrl) {
+  const rows = await rowsGet(apiUrl, 'PUSH_SUBS');
+  return rows.map(r => {
+    let obj = {};
+    try { obj = JSON.parse(r.payload); } catch (e) { return null; }
+    return obj && obj.subscription ? obj.subscription : obj;
+  }).filter(s => s && s.endpoint);
+}
+
+module.exports = { sendToSubscriptions, sheetGet, rowsGet, pushSubsGet };

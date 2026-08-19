@@ -41,3 +41,14 @@ Data tetap tersinkron ke Google Sheet / Apps Script yang sama seperti sebelumnya
 
 ## Update v7 — Perbaikan deploy gagal (Deploying: Failed)
 - Fungsi terjadwal (`morning-digest.js`, `evening-digest.js`) dipindah ke `netlify/functions-terjadwal/` (tidak ikut di-deploy) karena Netlify menolak scheduled functions pada deploy drag & drop. Aktifkan lagi dengan memindahkan situs ke deploy via GitHub — lihat README di folder tersebut.
+
+## Update v9 — Penyesuaian ke Skema Baris v3 + Tombol Hapus Tahapan
+**Konteks:** app sudah dipindah ke API skema baris (`AKfycbxdn6qg…`, `?action=read&table=…`) menggantikan pola lama "semua ditumpuk di 1 sel". Adapter di `dag-perencanaan.html` sudah menangani sisi app, TAPI fungsi terjadwal & skrip VPS masih membaca webhook lama — itu diperbaiki di sini.
+
+- `netlify/functions/_lib/push.js`: ditambah `rowsGet(apiUrl, table)` dan `pushSubsGet(apiUrl)` untuk membaca skema baris. `sheetGet` lama tetap ada (masih dipakai untuk `dag-daily-reports` yang belum dipetakan).
+- `morning-digest.js` & `evening-digest.js`: `DAILY_ITEMS` dan `PUSH_SUBS` kini dibaca dari API baris. Tanpa ini, job desk pagi & reminder sore akan membaca data lama yang sudah tidak diisi app → selalu tampak kosong.
+- Env var baru (opsional): `DAG_API_URL` — override URL API skema baris. Default sudah benar di kode.
+- **Tombol Hapus Tahapan dikembalikan** (hilang karena repo ini dibuat dari versi sebelum v8): ikon ✏️/🗑 per baris Gantt + tombol di modal. Menghapus tahapan juga melepas dependensi tahap lain, menghapus agenda Jadwal Studio yang terikat, dan memperingatkan bila ada approval owner tersambung.
+- Service worker cache dinaikkan ke `dag-perencanaan-v11`.
+
+**Skrip VPS Hermes** (`jobdesk-pagi.py`, `laporan-sore-desain.py`) juga sudah disesuaikan ke API baris — ganti file lamanya di `/opt/hermes/dag-jobdesk/` dan `~/.hermes/scripts/`, lalu uji `--dry-run`.
