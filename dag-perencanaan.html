@@ -126,6 +126,13 @@
   .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);z-index:3;}
   .bar-belum{background:#9AA3B2;} .bar-berjalan{background:var(--blue);} .bar-selesai{background:var(--success);}
   .bar-terlambat{background:var(--danger);} .bar-tertunda{background:var(--amber);} .bar-review{background:#7A5CB0;}
+  .bar-revisi{background:var(--danger);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0 6px,transparent 6px 12px);}
+  .revisi-item-list{margin-top:4px;padding:6px 8px;background:var(--danger-soft);border-radius:8px;font-size:11px;color:var(--danger);line-height:1.5;}
+  .revisi-item-list div::before{content:'\21BA  ';}
+  .ck-toggle{width:26px;height:26px;border-radius:50%;border:2px solid #B7BEC9;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex:0 0 26px;transition:all .15s;}
+  .ck-toggle.done{background:var(--success);border-color:var(--success);}
+  .ck-toggle.progress{background:var(--amber);border-color:var(--amber);}
+  .ck-toggle.revisi{background:var(--danger);border-color:var(--danger);}
 
   /* Workload */
   .workload-controls{display:flex;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;background:#FCFBF8;}
@@ -227,7 +234,7 @@
 
   /* Checklist manager (inside task modal) */
   .checklist-box{border:1px solid var(--border);border-radius:8px;background:#FCFBF8;padding:10px;}
-  .checklist-row{display:grid;grid-template-columns:1fr 150px 30px;gap:8px;align-items:center;margin-bottom:8px;}
+  .checklist-row{display:grid;grid-template-columns:26px 1fr 130px 30px;gap:8px;align-items:center;margin-bottom:8px;}
   .checklist-row input, .checklist-row select{font-family:'Inter',sans-serif;font-size:13px;padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:#fff;}
   .checklist-row .rm-btn{all:unset;cursor:pointer;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--danger);}
   .checklist-row .rm-btn:hover{background:var(--danger-soft);}
@@ -344,7 +351,7 @@
     .modal-foot{padding:14px 18px calc(18px + env(safe-area-inset-bottom,0px));flex-wrap:wrap;flex-shrink:0;}
     .modal-foot .btn{flex:1;justify-content:center;}
 
-    .checklist-row{grid-template-columns:1fr auto 26px;gap:6px;}
+    .checklist-row{grid-template-columns:26px 1fr auto 26px;gap:6px;}
     .checklist-row select{font-size:12px;padding:6px 6px;}
 
     .gantt-header-label,.gantt-task-label{width:170px;}
@@ -808,7 +815,7 @@
       <div class="field"><label>Tanggal Selesai *</label><input type="date" id="gt-end"></div>
       <div class="field"><label>PIC</label><input type="text" id="gt-pic" list="pic-list-2" placeholder="Nama PIC"></div>
       <datalist id="pic-list-2"><option value="Geni Rafsanjani"><option value="Risman"><option value="Rama"></datalist>
-      <div class="field"><label>Status</label><select id="gt-status"><option>Belum Mulai</option><option>Berjalan</option><option>Perlu Review Leader</option><option>Selesai</option><option>Terlambat</option><option>Tertunda</option></select></div>
+      <div class="field"><label>Status<br><span style="font-weight:400;color:var(--muted);font-size:11px;" id="gt-status-hint">otomatis dari checklist gambar bila checklist terisi</span></label><select id="gt-status"><option>Belum Mulai</option><option>Berjalan</option><option>Perlu Review Leader</option><option>Selesai</option><option>Revisi</option><option>Terlambat</option><option>Tertunda</option></select></div>
       <div class="field"><label>Bobot Tahap (%)</label>
         <div style="display:flex;gap:6px;">
           <input type="number" id="gt-weight" min="0" max="100" value="0" placeholder="cth. 20" style="flex:1;">
@@ -1246,6 +1253,9 @@ async function loadData(){
     }
   }catch(e){ projects = []; }
   try{ const t = await storageGet('dag-tasks-desain'); tasks = t ? JSON.parse(t.value) : []; }catch(e){ tasks = []; }
+  // Migrasi sistem status v2: status item lama disederhanakan (Proses->On Progress,
+  // Disetujui Owner->Selesai) dan status tahapan disinkronkan otomatis dari checklist.
+  try{ if(normalizeTasksData()) await saveTasks(); }catch(e){}
   // Jadwal DESAIN terpisah (dag-schedule-desain). Migrasi sekali dari 'dag-schedule' lama:
   // ambil agenda yang bersumber dari tahapan desain, atau agenda manual yang PIC-nya bukan tim lapangan.
   try{
@@ -1431,8 +1441,8 @@ function switchTab(tab){
 
 /* ===================== BADGES ===================== */
 function pfStatusBadge(s){ const m={'Perencanaan':'badge-navy','Berjalan':'badge-blue','Selesai':'badge-success','Ditunda':'badge-gold','Batal':'badge-danger'}; return `<span class="badge ${m[s]||'badge-muted'}">${s}</span>`; }
-function gtStatusBadge(s){ const m={'Belum Mulai':'badge-muted','Berjalan':'badge-blue','Perlu Review Leader':'badge-purple','Selesai':'badge-success','Terlambat':'badge-danger','Tertunda':'badge-gold'}; return `<span class="badge ${m[s]||'badge-muted'}">${s}</span>`; }
-function gtBarClass(s){ const m={'Belum Mulai':'bar-belum','Berjalan':'bar-berjalan','Perlu Review Leader':'bar-review','Selesai':'bar-selesai','Terlambat':'bar-terlambat','Tertunda':'bar-tertunda'}; return m[s]||'bar-belum'; }
+function gtStatusBadge(s){ const m={'Belum Mulai':'badge-muted','Berjalan':'badge-blue','Perlu Review Leader':'badge-purple','Selesai':'badge-success','Revisi':'badge-danger','Terlambat':'badge-danger','Tertunda':'badge-gold'}; return `<span class="badge ${m[s]||'badge-muted'}">${s==='Revisi'?'\u21BA Revisi':s}</span>`; }
+function gtBarClass(s){ const m={'Belum Mulai':'bar-belum','Berjalan':'bar-berjalan','Perlu Review Leader':'bar-review','Selesai':'bar-selesai','Revisi':'bar-revisi','Terlambat':'bar-terlambat','Tertunda':'bar-tertunda'}; return m[s]||'bar-belum'; }
 
 /* ===== APPROVAL OWNER PER FASE GAMBAR (terhubung Approval System klien) =====
    Saat fase gambar rencana ber-status "Selesai" (sudah lewat Review Leader),
@@ -1486,8 +1496,8 @@ async function pullOwnerApprovals(){
     linked.forEach(t=>{ const it=items.find(x=>x.id===t.ownerApprovalExtId); if(!it) return;
       if(t.ownerApprovalStatus!==it.status){ t.ownerApprovalStatus=it.status; t.ownerApprovalAt=it.signedAt||''; t.ownerApprovalBy=it.signedBy||''; changed=true;
         if(it.status==='approved') showToast(`✓ Owner menyetujui gambar "${t.name}".`); if(it.status==='rejected') showToast(`✗ Owner menolak gambar "${t.name}" — perlu revisi.`); }
-      // Owner menolak → fase kembali "Berjalan" agar masuk kerja revisi
-      if(it.status==='rejected' && t.status==='Selesai'){ t.status='Berjalan'; t.ownerApprovalExtId=null; t.ownerApprovalRejectedDoc=it.docNumber||it.id; changed=true; }
+      // Owner menolak → fase otomatis "Revisi" agar masuk kerja revisi
+      if(it.status==='rejected' && t.status==='Selesai'){ t.status='Revisi'; t.ownerApprovalExtId=null; t.ownerApprovalRejectedDoc=it.docNumber||it.id; changed=true; }
     });
   }catch(e){}
   return changed;
@@ -1810,6 +1820,41 @@ async function convertBriefToProject(brief){
   return newProject.id;
 }
 
+/* ===================== STATUS OTOMATIS DARI CHECKLIST =====================
+   Sumber kebenaran status tahapan = checklist gambar kerja.
+   Prioritas: Revisi (ada >=1 item Revisi) > Selesai (semua item selesai)
+   > Berjalan (ada item On Progress/selesai sebagian) > Belum Mulai.
+   Kalau checklist kosong, status manual tetap dipakai (fallback). */
+function isChecklistDone(c){ return c.status==='Selesai' || c.status==='Disetujui Owner'; }
+function deriveStatusFromChecklist(cl, fallback){
+  if(!cl || !cl.length) return fallback || 'Belum Mulai';
+  if(cl.some(c=>c.status==='Revisi')) return 'Revisi';
+  if(cl.every(isChecklistDone)) return 'Selesai';
+  if(cl.some(c=>c.status==='On Progress' || c.status==='Proses' || isChecklistDone(c))) return 'Berjalan';
+  return 'Belum Mulai';
+}
+function deriveTaskStatus(t){
+  const st = deriveStatusFromChecklist(t.checklist, t.status);
+  // Semua gambar selesai TAPI owner pernah menolak & belum dibereskan -> tetap Revisi
+  if(st==='Selesai' && t.ownerApprovalRejectedDoc) return 'Revisi';
+  return st;
+}
+function revisiItems(t){ return (t.checklist||[]).filter(c=>c.status==='Revisi'); }
+function normalizeTasksData(){
+  let changed = false;
+  tasks.forEach(t=>{
+    (t.checklist||[]).forEach(c=>{
+      if(c.status==='Proses'){ c.status='On Progress'; changed=true; }
+      if(c.status==='Disetujui Owner'){ c.status='Selesai'; changed=true; }
+    });
+    if(t.checklist && t.checklist.length){
+      const st = deriveTaskStatus(t);
+      if(t.status !== st){ t.status = st; changed=true; }
+    }
+  });
+  return changed;
+}
+
 /* ===================== PORTFOLIO ===================== */
 function taskProgress(task){
   if(task.checklist && task.checklist.length){
@@ -2057,11 +2102,13 @@ function renderGantt(){
     const leftPct = ((s-minD)/86400000)/totalDays*100;
     const widthPct = Math.max(((e-s)/86400000)/totalDays*100, 1.5);
     const prog = taskProgress(t);
-    const checklistDone = t.checklist ? t.checklist.filter(c=>c.status==='Selesai'||c.status==='Disetujui Owner').length : 0;
+    const derivedStatus = deriveTaskStatus(t);
+    const checklistDone = t.checklist ? t.checklist.filter(isChecklistDone).length : 0;
     const checklistTotal = t.checklist ? t.checklist.length : 0;
-    const checklistRevisi = t.checklist ? t.checklist.filter(c=>c.status==='Revisi').length : 0;
+    const revItems = revisiItems(t);
     const checklistNote = checklistTotal ? `<span class="checklist-count-pill">${checklistDone}/${checklistTotal} gambar</span>` : '';
-    const checklistRevisiNote = checklistRevisi ? `<span class="delay-badge">↺ ${checklistRevisi} item direvisi</span>` : '';
+    const checklistRevisiNote = revItems.length ? `<span class="delay-badge">↺ ${revItems.length} item revisi</span>` : '';
+    const revisiListHtml = revItems.length ? `<div class="revisi-item-list">${revItems.map(c=>`<div>${escapeHtml(c.name)}</div>`).join('')}</div>` : '';
     const depTask = t.dependsOn ? tasks.find(x=>x.id===t.dependsOn) : null;
     const depNote = depTask ? `<span class="dep-note">Setelah: ${escapeHtml(depTask.name)}</span>` : '';
     const revCount = t.revisions ? t.revisions.length : 0;
@@ -2078,14 +2125,15 @@ function renderGantt(){
               <button class="icon-btn danger" title="Hapus Tahapan" onclick="event.stopPropagation();deleteGtTask('${t.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button>
             </div>
           </div>
-          <div class="sub" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${escapeHtml(t.pic||'—')} · ${gtStatusBadge(t.status)} ${ownerApprovalBadge(t)}${t.ownerApprovalExtId&&t.ownerApprovalStatus==='pending'?`<a class="badge badge-gold" href="https://wa.me/?text=${encodeURIComponent(ownerApprovalWaText(t))}" target="_blank" rel="noopener" style="text-decoration:none;" onclick="event.stopPropagation()">Kirim WA</a>`:''}</div>
+          <div class="sub" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${escapeHtml(t.pic||'—')} · ${gtStatusBadge(derivedStatus)} ${ownerApprovalBadge(t)}${t.ownerApprovalExtId&&t.ownerApprovalStatus==='pending'?`<a class="badge badge-gold" href="https://wa.me/?text=${encodeURIComponent(ownerApprovalWaText(t))}" target="_blank" rel="noopener" style="text-decoration:none;" onclick="event.stopPropagation()">Kirim WA</a>`:''}</div>
           <div class="sub" style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${t.weight?`<span class="checklist-count-pill">Bobot ${t.weight}%</span>`:''} ${checklistNote} ${checklistRevisiNote} ${depNote}</div>
+          ${revisiListHtml}
           ${(revNote||delayNote) ? `<div class="sub" style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${revNote} ${delayNote}</div>` : ''}
         </div>
         <div class="gantt-track">
           <div class="gantt-bg-lines">${months.map(m=>`<div style="flex:0 0 ${m.widthPct}%"></div>`).join('')}</div>
           ${todayPct>=0 && todayPct<=100 ? `<div class="gantt-today" style="left:${todayPct}%"></div>` : ''}
-          <div class="gantt-bar ${gtBarClass(t.status)}" style="left:${leftPct}%;width:${widthPct}%;" title="${escapeHtml(t.name)}: ${fmtDate(t.start)} - ${fmtDate(t.end)}" onclick="openGtModal('${t.id}')">
+          <div class="gantt-bar ${gtBarClass(derivedStatus)}" style="left:${leftPct}%;width:${widthPct}%;" title="${escapeHtml(t.name)}: ${fmtDate(t.start)} - ${fmtDate(t.end)}" onclick="openGtModal('${t.id}')">
             <div class="fill" style="width:${prog}%"></div>
             <span>${escapeHtml(t.name)} · ${prog}%</span>
           </div>
@@ -2346,7 +2394,7 @@ function ringColor(pct){
 function ovCheckIconClass(status){
   if(status==='Selesai'||status==='Disetujui Owner') return {bg:'var(--success)', icon:'✓'};
   if(status==='Revisi') return {bg:'var(--danger)', icon:'↺'};
-  if(status==='Proses') return {bg:'var(--amber)', icon:'◐'};
+  if(status==='On Progress'||status==='Proses') return {bg:'var(--amber)', icon:'◐'};
   return {bg:'#B7BEC9', icon:'○'};
 }
 function renderOwnerView(){
@@ -2402,7 +2450,7 @@ function renderOwnerView(){
             <div class="ov-phase-meta">${fmtDate(t.start)} — ${fmtDate(t.end)} ${t.weight?(' · Bobot '+t.weight+'%'):''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            ${gtStatusBadge(t.status)} ${ownerApprovalBadge(t)}
+            ${gtStatusBadge(deriveTaskStatus(t))} ${ownerApprovalBadge(t)}
             <span class="badge badge-navy">${prog}%</span>
           </div>
         </div>
@@ -2419,30 +2467,59 @@ function renderOwnerView(){
 
 function makeChecklistId(){ return 'ci_'+Date.now()+Math.random().toString(36).slice(2,6); }
 
+const CHECKLIST_STATUSES = ['Belum Mulai','On Progress','Selesai','Revisi'];
+function ckToggleView(status){
+  if(status==='Selesai'||status==='Disetujui Owner') return {cls:'done', icon:'✓', title:'Selesai — klik untuk batalkan'};
+  if(status==='Revisi') return {cls:'revisi', icon:'↺', title:'Revisi — klik untuk tandai selesai'};
+  if(status==='On Progress'||status==='Proses') return {cls:'progress', icon:'◐', title:'On Progress — klik untuk tandai selesai'};
+  return {cls:'', icon:'', title:'Klik untuk tandai selesai'};
+}
 function renderChecklistRows(){
   const box = $('gt-checklist-rows');
   $('gt-checklist-empty').style.display = currentChecklist.length ? 'none' : 'block';
-  const statusColor = { 'Belum Mulai':'#B7BEC9', 'Proses':'var(--amber)', 'Revisi':'var(--danger)', 'Selesai':'var(--success)', 'Disetujui Owner':'var(--success)' };
-  box.innerHTML = currentChecklist.map((item, idx)=>`
+  const statusColor = { 'Belum Mulai':'#B7BEC9', 'On Progress':'var(--amber)', 'Proses':'var(--amber)', 'Revisi':'var(--danger)', 'Selesai':'var(--success)', 'Disetujui Owner':'var(--success)' };
+  box.innerHTML = currentChecklist.map((item, idx)=>{
+    const tg = ckToggleView(item.status);
+    const st = (item.status==='Proses') ? 'On Progress' : (item.status==='Disetujui Owner' ? 'Selesai' : item.status);
+    return `
     <div class="checklist-row" style="border-left:3px solid ${statusColor[item.status]||'#B7BEC9'};padding-left:8px;">
+      <button type="button" class="ck-toggle ${tg.cls}" title="${tg.title}" onclick="toggleChecklistDone(${idx})">${tg.icon}</button>
       <input type="text" value="${escapeHtml(item.name)}" placeholder="cth. Denah Lantai 1" oninput="updateChecklistItem(${idx}, 'name', this.value)">
       <select onchange="updateChecklistItem(${idx}, 'status', this.value)">
-        ${['Belum Mulai','Proses','Revisi','Selesai','Disetujui Owner'].map(s=>`<option ${item.status===s?'selected':''}>${s}</option>`).join('')}
+        ${CHECKLIST_STATUSES.map(s=>`<option ${st===s?'selected':''}>${s}</option>`).join('')}
       </select>
       <button type="button" class="rm-btn" onclick="removeChecklistItem(${idx})" title="Hapus item">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
-  `).join('');
+  `;}).join('');
   updateComputedProgress();
 }
-function updateChecklistItem(idx, field, value){ currentChecklist[idx][field] = value; updateComputedProgress(); }
+/* Klik lingkaran = cara cepat ceklis: apa pun statusnya -> Selesai; kalau sudah Selesai -> Belum Mulai. */
+function toggleChecklistDone(idx){
+  const c = currentChecklist[idx];
+  c.status = isChecklistDone(c) ? 'Belum Mulai' : 'Selesai';
+  renderChecklistRows();
+}
+function updateChecklistItem(idx, field, value){ currentChecklist[idx][field] = value; if(field==='status'){ renderChecklistRows(); } else { updateComputedProgress(); } }
 function removeChecklistItem(idx){ currentChecklist.splice(idx,1); renderChecklistRows(); }
 function updateComputedProgress(){
-  if(!currentChecklist.length){ $('gt-computed-progress').textContent = '— (pakai progres manual)'; return; }
-  const done = currentChecklist.filter(c=>c.status==='Selesai'||c.status==='Disetujui Owner').length;
+  const statusSel = $('gt-status'), progInput = $('gt-progress'), hint = $('gt-status-hint');
+  if(!currentChecklist.length){
+    $('gt-computed-progress').textContent = '— (pakai progres & status manual)';
+    statusSel.disabled = false; progInput.disabled = false;
+    if(hint) hint.textContent = 'checklist kosong — status diatur manual';
+    return;
+  }
+  const done = currentChecklist.filter(isChecklistDone).length;
   const pct = Math.round(done/currentChecklist.length*100);
-  $('gt-computed-progress').textContent = `${pct}% (${done}/${currentChecklist.length} item selesai)`;
+  const st = deriveStatusFromChecklist(currentChecklist);
+  const rev = currentChecklist.filter(c=>c.status==='Revisi');
+  // Status tahapan mengikuti checklist — tidak bisa diubah manual agar tidak konflik.
+  statusSel.value = st; statusSel.disabled = true; progInput.disabled = true;
+  if(hint) hint.textContent = 'terkunci otomatis dari checklist gambar';
+  $('gt-computed-progress').textContent = `${pct}% (${done}/${currentChecklist.length} item selesai) — Status otomatis: ${st}` +
+    (rev.length ? ` · Item revisi: ${rev.map(c=>c.name||'(tanpa nama)').join(', ')}` : '');
 }
 $('gt-add-checklist-item').addEventListener('click', ()=>{
   currentChecklist.push({ id: makeChecklistId(), name:'', status:'Belum Mulai' });
@@ -2656,6 +2733,13 @@ $('gt-save').addEventListener('click', async ()=>{
 
   const dependsOn = $('gt-depends').value || '';
   const data = { name, start, end, pic:$('gt-pic').value.trim(), status:$('gt-status').value, progress:Number($('gt-progress').value)||0, weight:Number($('gt-weight').value)||0, notes:$('gt-notes').value.trim(), checklist: currentChecklist.filter(c=>c.name.trim()!==''), dependsOn };
+  // Status tahapan = turunan checklist (sumber kebenaran tunggal, anti-konflik).
+  if(data.checklist.length){
+    data.status = deriveStatusFromChecklist(data.checklist, data.status);
+    // Semua item beres & tidak ada Revisi -> revisi owner dianggap dibereskan,
+    // bersihkan penanda penolakan supaya approval owner baru bisa dibuat lagi.
+    if(data.status==='Selesai') data.ownerApprovalRejectedDoc = null;
+  }
 
   let savedId = editingGtId;
   let deltaDaysForCascade = 0;
@@ -3372,7 +3456,7 @@ function renderKanban(){
     ready: list.filter(t=>t.status==='Belum Mulai' && !isTaskBlocked(t)),
     berjalan: list.filter(t=>t.status==='Berjalan'),
     review: list.filter(t=>t.status==='Perlu Review Leader'),
-    revisi: list.filter(t=>t.checklist && t.checklist.some(c=>c.status==='Revisi')),
+    revisi: list.filter(t=>deriveTaskStatus(t)==='Revisi'),
     selesai: list.filter(t=>t.status==='Selesai')
   };
   ['blocked','ready','berjalan','review','revisi'].forEach(k=>{
