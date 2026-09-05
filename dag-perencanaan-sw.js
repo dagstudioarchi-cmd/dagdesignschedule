@@ -3,7 +3,7 @@
  * Versi mandiri (tanpa Netlify / tanpa notifikasi push server).
  * Hanya menangani caching dasar untuk pemakaian offline/PWA.
  */
-const CACHE = 'dag-perencanaan-v13'; // v12: lepas dari Netlify — push notification server dihapus
+const CACHE = 'dag-perencanaan-v14'; // v12: lepas dari Netlify — push notification server dihapus
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add(self.location.pathname.replace('dag-perencanaan-sw.js', 'dag-perencanaan.html'))).catch(() => {}));
