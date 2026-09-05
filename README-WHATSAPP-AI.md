@@ -1,4 +1,4 @@
-# Kirim Tugas via WhatsApp + Saran PIC Otomatis — DAG Perencanaan
+# Kirim Tugas via WhatsApp + Saran PIC Otomatis — DAG Design Manager
 
 Update ini mengganti ketergantungan pada notifikasi push (yang sering tidak konsisten,
 terutama di iPhone) dengan cara yang lebih pasti: tombol kirim langsung ke WhatsApp,
