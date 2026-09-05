@@ -1,4 +1,4 @@
-# DAG Design Manager
+# DAG Perencanaan
 
 App jadwal desain DAG Studio — **standalone, tanpa hosting/Netlify**. Repo GitHub
 ini adalah sumber & arsip kerja (source of truth), bukan situs yang di-deploy live.
@@ -7,8 +7,8 @@ itu terpisah dari hosting dan tidak terpengaruh oleh perubahan ini.
 
 ## Struktur
 ```
-dagdesign-manager.html      → aplikasi (buka file ini langsung di browser, atau host statis apapun)
-dagdesign-manager-sw.js     → service worker (caching offline dasar, tanpa push)
+dag-perencanaan.html      → aplikasi (buka file ini langsung di browser, atau host statis apapun)
+dag-perencanaan-sw.js     → service worker (caching offline dasar, tanpa push)
 assets/dag-theme.css      → tema monokrom + oranye (Futura / Century Gothic)
 dag-icon-192.png / dag-icon-512.png → ikon PWA
 package.json
@@ -17,7 +17,7 @@ README-WHATSAPP-AI.md     → tombol Kirim ke WA & saran PIC (rule-based)
 
 ## Cara pakai
 1. Clone / download repo ini.
-2. Buka `dagdesign-manager.html` langsung (double-click) atau host statis manapun
+2. Buka `dag-perencanaan.html` langsung (double-click) atau host statis manapun
    yang Bro pakai — tidak butuh build step, environment variable, atau server
    apa pun.
 3. Data proyek/tahapan/jadwal otomatis sinkron ke Google Sheet DAG Studio lewat
