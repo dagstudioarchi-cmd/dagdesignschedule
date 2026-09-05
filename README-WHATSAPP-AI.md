@@ -17,9 +17,8 @@ plus saran pembagian tugas otomatis berdasarkan beban kerja tim.
 - Data kontak disimpan di key `dag-team-contacts` lewat mekanisme sinkron yang sama
   dengan data lain (Google Sheet webhook / localStorage) — tidak perlu setup
   tambahan.
-- Notifikasi push di menu Pengaturan Sinkronisasi tetap ada (opsional) tapi bukan
-  lagi cara utama — catatan di modal sudah diperbarui untuk mengarahkan ke tombol
-  WA sebagai cara yang lebih bisa diandalkan.
+- Notifikasi push server (butuh Netlify function) sudah dilepas total — tombol
+  Kirim ke WA ini sekarang satu-satunya jalur notifikasi tugas.
 
 ## 2. Saran PIC otomatis berdasarkan beban kerja
 
@@ -34,27 +33,7 @@ plus saran pembagian tugas otomatis berdasarkan beban kerja tim.
   anggota tim lain atau mempertimbangkan freelance.
 - Ini berjalan sepenuhnya di sisi app (rule-based), **tidak butuh setup tambahan**.
 
-## 3. (Opsional) Saran PIC via Claude — lebih memperhatikan konteks nama tugas
-
-Kalau ingin saran PIC yang juga mempertimbangkan *isi/konteks* nama tugas (bukan
-cuma jumlah beban), aktifkan integrasi Claude:
-
-1. Siapkan API key dari [Claude Platform](https://platform.claude.com) (Settings →
-   API Keys).
-2. Di Netlify: **Site settings → Environment variables → Add a variable**
-   - `ANTHROPIC_API_KEY` = API key dari langkah 1 (jangan pernah ditaruh di kode/HTML).
-3. **Redeploy** situs (tab Deploys → Trigger deploy → Deploy site) supaya function
-   `netlify/functions/suggest-pic.js` membaca env var yang baru.
-4. Selesai — tombol **🤖 Sarankan** otomatis memakai Claude begitu function ini
-   berhasil dipanggil. Kalau API key belum diisi / function gagal / tidak ada
-   koneksi, app **otomatis jatuh ke saran rule-based** di poin 2 — jadi fitur ini
-   aman dipakai kapan saja, dengan atau tanpa Claude aktif.
-
-Estimasi biaya: satu kali klik "Sarankan" ≈ beberapa ratus token (jauh di bawah
-Rp100/klik dengan harga Claude Sonnet saat ini) — sangat murah untuk pemakaian
-harian studio kecil.
-
-## 4. Proyek "Selesai" disembunyikan dari daftar aktif
+## 3. Proyek "Selesai" disembunyikan dari daftar aktif
 
 Di halaman **Perencanaan Proyek**, dropdown pemilihan proyek sekarang otomatis
 menyembunyikan proyek berstatus **Selesai** supaya tidak bercampur dengan proyek

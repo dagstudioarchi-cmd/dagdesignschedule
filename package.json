@@ -1,9 +1,6 @@
 {
-  "name": "dag-studio-pwa",
+  "name": "dag-perencanaan",
   "version": "1.0.0",
   "private": true,
-  "description": "DAG Studio — Unified App Hub (Netlify Deploy) dengan notifikasi push",
-  "dependencies": {
-    "web-push": "^3.6.7"
-  }
+  "description": "DAG Perencanaan — app jadwal desain DAG Studio (standalone, tanpa hosting/Netlify; sinkron data via Google Apps Script)"
 }

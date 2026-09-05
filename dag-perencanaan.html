@@ -887,13 +887,8 @@
         Isi kolom di atas hanya jika ingin memakai Google Sheet <b>lain</b>. Kosongkan &amp; simpan untuk memakai penyimpanan lokal browser ini saja.
       </div>
       <div class="field full" id="sync-test-result" style="font-size:12.5px;"></div>
-      <div class="field full" style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
-        <label>Notifikasi Push</label>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px;">
-          Opsional — kirim notifikasi otomatis: job desk tiap pagi, dan laporan progress sore begitu tim submit. Notifikasi browser/push kadang tidak konsisten tergantung device (terutama iPhone). Untuk memastikan tugas harian sampai ke tim, gunakan tombol <b>&#128241; Kirim ke WA</b> di halaman Rencana Kerja Harian — lebih pasti karena langsung terkirim ke WhatsApp masing-masing.
-        </div>
-        <button class="btn btn-primary btn-sm" id="push-enable-btn" type="button">🔔 Aktifkan Notifikasi (opsional)</button>
-        <span id="push-status-note" style="font-size:12px;color:var(--muted);margin-left:8px;"></span>
+      <div class="field full" style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;font-size:12px;color:var(--muted);line-height:1.6;">
+        Untuk memastikan tugas harian sampai ke tim, gunakan tombol <b>&#128241; Kirim ke WA</b> di halaman Rencana Kerja Harian — terkirim langsung ke WhatsApp masing-masing.
       </div>
     </div>
     <div class="modal-foot">
@@ -2894,29 +2889,10 @@ function suggestPicRuleBased(dateISO){
   const pick = infos.find(i=>i.level!=='Tinggi') || infos[0];
   return { pic: pick.pic, infos, overloaded };
 }
-// Saran berbasis Claude (opsional): memanggil Netlify Function `suggest-pic` yang menyertakan
-// ANTHROPIC_API_KEY di server (lihat README-WHATSAPP-AI.md). Kalau function belum di-deploy /
-// API key belum diisi / tidak ada koneksi, otomatis jatuh ke saran rule-based di atas —
-// jadi fitur ini aman dipakai walau AI belum disetel.
+// Saran PIC: rule-based saja (beban kerja paling ringan). Tanpa backend/server terpisah.
 async function suggestPicWithAI(itemName, dateISO){
-  const infos = allPicLoadInfo(dateISO);
-  try{
-    const resp = await fetch('/.netlify/functions/suggest-pic', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        itemName: itemName || '',
-        candidates: infos.map(i=>({ pic:i.pic, level:i.level, activeTaskCount:i.activeTaskCount, openDailyItems:i.openDailyItems }))
-      })
-    });
-    if(!resp.ok) throw new Error('function tidak tersedia');
-    const data = await resp.json();
-    if(data && data.pic) return { pic: data.pic, reason: data.reason||'', overloaded: !!data.overloaded, source:'ai' };
-    throw new Error('respon kosong');
-  }catch(e){
-    const fallback = suggestPicRuleBased(dateISO);
-    return { pic: fallback.pic, reason:'', overloaded: fallback.overloaded, source:'rule' };
-  }
+  const fallback = suggestPicRuleBased(dateISO);
+  return { pic: fallback.pic, reason:'', overloaded: fallback.overloaded, source:'rule' };
 }
 function renderDailyWorkloadBanner(){
   const el = $('dl-workload-banner');
@@ -3578,87 +3554,19 @@ $('data-import-input').addEventListener('change', (e)=>{
   reader.readAsText(file);
 });
 
-/* ===================== PWA SERVICE WORKER ===================== */
+/* ===================== PWA SERVICE WORKER (offline cache saja, tanpa push) ===================== */
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/dag-perencanaan-sw.js').catch(function(){});
+  navigator.serviceWorker.register('dag-perencanaan-sw.js').catch(function(){});
 }
 
-/* ===================== NOTIFIKASI PUSH ===================== */
-const DAG_VAPID_PUBLIC_KEY = 'BCPKx3UqLngNinM-5AF0Suw0vYXyAEaIlc88hALHZzdEvDGDs88ZQ4Sxy1K5agENrevEQIMQntE6qxfgO4qAlJ0';
-const DAG_PUSH_FN_URL = '/.netlify/functions/send-push';
-
-function urlBase64ToUint8Array(base64String){
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for(let i=0;i<rawData.length;i++) outputArray[i] = rawData.charCodeAt(i);
-  return outputArray;
-}
-
-async function enableDagPushNotifications(){
-  const note = document.getElementById('push-status-note');
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
-    if(note) note.textContent = 'Browser ini tidak mendukung notifikasi push.';
-    return;
-  }
-  try{
-    const permission = await Notification.requestPermission();
-    if(permission !== 'granted'){
-      if(note) note.textContent = 'Izin notifikasi ditolak.';
-      return;
-    }
-    const reg = await navigator.serviceWorker.ready;
-    let sub = await reg.pushManager.getSubscription();
-    if(!sub){
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(DAG_VAPID_PUBLIC_KEY)
-      });
-    }
-    const label = localStorage.getItem('dagstudio-push-label') || prompt('Nama Anda (untuk label notifikasi ini):', '') || 'Tanpa nama';
-    localStorage.setItem('dagstudio-push-label', label);
-    await saveDagPushSubscription(sub, label);
-    if(note) note.textContent = 'Notifikasi aktif untuk perangkat ini.';
-    showToast('Notifikasi push diaktifkan.');
-  }catch(e){
-    if(note) note.textContent = 'Gagal mengaktifkan notifikasi.';
-  }
-}
-
-async function saveDagPushSubscription(subscription, label){
-  try{
-    const existing = await storageGet('dag-push-subs');
-    let list = [];
-    try{ list = existing ? JSON.parse(existing.value) : []; }catch(e){ list = []; }
-    const endpoint = subscription.endpoint;
-    const filtered = list.filter(s => s.subscription && s.subscription.endpoint !== endpoint);
-    filtered.push({ subscription: subscription.toJSON ? subscription.toJSON() : subscription, label: label || '', savedAt: new Date().toISOString() });
-    await storageSet('dag-push-subs', JSON.stringify(filtered));
-  }catch(e){ /* jangan blokir alur utama kalau simpan subscription gagal */ }
-}
-
-async function sendDagPush(title, body, url){
-  try{
-    const existing = await storageGet('dag-push-subs');
-    let list = [];
-    try{ list = existing ? JSON.parse(existing.value) : []; }catch(e){ list = []; }
-    const subs = list.map(s => s.subscription).filter(Boolean);
-    if(!subs.length) return;
-    await fetch(DAG_PUSH_FN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscriptions: subs, title, body, url })
-    });
-  }catch(e){ /* notifikasi gagal terkirim tidak boleh mengganggu alur simpan data */ }
-}
-
-document.getElementById('push-enable-btn') && document.getElementById('push-enable-btn').addEventListener('click', enableDagPushNotifications);
+/* ===================== NOTIFIKASI ===================== */
+// Notifikasi push server sudah tidak dipakai (tanpa Netlify/backend).
+// Fungsi ini dibiarkan sebagai no-op supaya pemanggilnya (approval owner, laporan sore) tidak error.
+async function sendDagPush(title, body, url){ /* no-op: dinonaktifkan, gunakan tombol Kirim ke WA */ }
 
 /* ===================== INIT ===================== */
 populateTemplateSelect();
 loadData();
 </script>
-<script src="assets/dag-nav.js" data-hub="https://dagconst-promanagement.netlify.app/" data-switch="switchTab" data-overlay=".overlay" data-open="open"></script>
 </body>
 </html>
