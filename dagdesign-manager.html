@@ -989,7 +989,9 @@ function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add(
 const LS_PREFIX = 'dagstudio-perencanaan:';
 const SYNC_URL_KEY = 'dagstudio-perencanaan:sync-url';
 const usingClaudeStorage = (typeof window.storage !== 'undefined' && window.storage !== null);
-const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycby3KgsmeC7z1kAMZ6nnhGhMviUlWQcxen5azluTiN93PWRgjr4A3wWrJpmT0EwwvVnPEw/exec';
+const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbxBjSBa9QLvMKliAb4H-PE9SURy5ZF6oixsO73IrK8LAhLkuNef_E_DcGJs4aY-D-tc/exec'; // backend PERENCANAAN (spreadsheet DAG DESIGN SCHEDULE MASTER)
+const OLD_BUILD_WEBHOOK = 'https://script.google.com/macros/s/AKfycby3KgsmeC7z1kAMZ6nnhGhMviUlWQcxen5azluTiN93PWRgjr4A3wWrJpmT0EwwvVnPEw/exec'; // webhook lama DAG Build — dipakai HANYA sebagai jembatan dag-projects-konstruksi
+try{ if(localStorage.getItem(SYNC_URL_KEY) === OLD_BUILD_WEBHOOK) localStorage.removeItem(SYNC_URL_KEY); }catch(e){} // override lama di perangkat diarahkan ke default baru
 
 function getSyncUrl(){
   try{
@@ -1075,7 +1077,7 @@ async function storageSet(key, value){
 (function(){
   'use strict';
 
-  var API = 'https://script.google.com/macros/s/AKfycbxdn6qgVpneBOjQel3AquFPLajFXNHd34FPfi1OID7uZVtpgs1Kv0l-PIrvNs9aXxqByw/exec';
+  var API = 'https://script.google.com/macros/s/AKfycbxBjSBa9QLvMKliAb4H-PE9SURy5ZF6oixsO73IrK8LAhLkuNef_E_DcGJs4aY-D-tc/exec'; // backend PERENCANAAN v1 (satu URL untuk API tabel + key-value)
   var AKTIF = true;              // set false untuk kembali ke perilaku lama
   if(!AKTIF) return;
 
@@ -1110,7 +1112,6 @@ async function storageSet(key, value){
   var PETA = {
     'dag-projects-desain':'PROJECTS_DESAIN',
     'dag-projects':'PROJECTS_DESAIN',            // kunci lama, dibaca saat migrasi awal
-    'dag-projects-konstruksi':'PROJECTS_KONSTRUKSI',
     'dag-schedule-desain':'SCHEDULE_DESAIN',
     'dag-schedule':'SCHEDULE_DESAIN',
     'dag-briefs':'BRIEFS',
@@ -1166,6 +1167,13 @@ async function storageSet(key, value){
 
   storageGet = async function(key){
     try{
+      if(key === BUILD_PROJECTS_KEY){
+        // JEMBATAN: daftar proyek konstruksi tetap dibaca dari store hidup DAG Build (webhook lama)
+        var jr = await fetch(OLD_BUILD_WEBHOOK+'?key='+encodeURIComponent(key)+'&_t='+Date.now(), { cache:'no-store' });
+        var jo = await jr.json();
+        if(jo && jo.value !== null && jo.value !== undefined){ lsSet(key, jo.value); return { key:key, value:jo.value }; }
+        return null;
+      }
       if(key === 'dag-tasks-desain') return bungkus(key, await bacaTahapan());
       if(key === 'dag-team-contacts'){
         var obj = {};
@@ -1187,6 +1195,15 @@ async function storageSet(key, value){
   };
 
   storageSet = async function(key, value){
+    if(key === BUILD_PROJECTS_KEY){
+      // JEMBATAN: serah-terima proyek desain -> konstruksi ditulis ke store hidup DAG Build (webhook lama)
+      lsSet(key, value);
+      var jw = await fetch(OLD_BUILD_WEBHOOK, { method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ key:key, value:value }) });
+      if(!jw.ok) throw new Error('Gagal mengirim ke webhook DAG Build');
+      return { key:key, value:value };
+    }
     var dikelola = PETA[key] || key === 'dag-tasks-desain' ||
                    key === 'dag-team-contacts' || key === 'dag-push-subs';
     if(!dikelola) return await _set(key, value);   // kunci lain: perilaku lama

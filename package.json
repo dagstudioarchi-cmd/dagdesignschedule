@@ -1,6 +1,6 @@
 {
-  "name": "dag-perencanaan",
+  "name": "dagdesign-manager",
   "version": "1.0.0",
   "private": true,
-  "description": "DAG Perencanaan — app jadwal desain DAG Studio (standalone, tanpa hosting/Netlify; sinkron data via Google Apps Script)"
+  "description": "DAG Design Manager — app jadwal desain DAG Studio (standalone, tanpa hosting/Netlify; sinkron data via Google Apps Script)"
 }

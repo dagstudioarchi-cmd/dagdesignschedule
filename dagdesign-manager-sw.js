@@ -3,7 +3,7 @@
  * Versi mandiri (tanpa Netlify / tanpa notifikasi push server).
  * Hanya menangani caching dasar untuk pemakaian offline/PWA.
  */
-const CACHE = 'dagdesign-manager-v13'; // v13: rename dag-perencanaan.html -> dagdesign-manager.html
+const CACHE = 'dagdesign-manager-v14'; // v13: rename dag-perencanaan.html -> dagdesign-manager.html
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add(self.location.pathname.replace('dagdesign-manager-sw.js', 'dagdesign-manager.html'))).catch(() => {}));
