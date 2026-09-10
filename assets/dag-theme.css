@@ -59,7 +59,7 @@ a{color:var(--acc);} a:hover{color:var(--tx);}
 .sidebar{width:236px !important;background:var(--s1) !important;color:var(--tx) !important;border-right:1px solid var(--line);padding:22px 16px 18px !important;position:sticky;top:0;height:100vh;}
 .brand{margin-bottom:22px !important;gap:12px !important;}
 .brand .mark{height:auto !important;width:100% !important;margin:0 !important;filter:none !important;}
-.brand .name{display:none !important;}
+.brand .name{display:block !important;text-transform:uppercase !important;letter-spacing:.14em !important;font-weight:700 !important;font-size:15px !important;}
 .brand .sub{font-family:var(--mono) !important;font-size:10px !important;letter-spacing:.14em !important;color:var(--mu) !important;display:flex;align-items:center;gap:8px;margin-top:0 !important;}
 .brand .sub::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--acc);animation:dagPulse 2s infinite;}
 .nav{counter-reset:navi;gap:2px !important;}
