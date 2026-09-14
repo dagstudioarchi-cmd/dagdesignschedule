@@ -1121,12 +1121,14 @@ async function storageSet(key, value){
   }
 
   /* ---------- PROJECTS_DESAIN ---------- */
+  var STATUS_PROJ_DB = { 'Perencanaan':'perencanaan', 'Berjalan':'berjalan', 'Selesai':'selesai', 'Ditunda':'batal', 'Batal':'batal' };
+  var STATUS_PROJ_APP = { 'perencanaan':'Perencanaan', 'berjalan':'Berjalan', 'selesai':'Selesai', 'batal':'Batal' };
   async function bacaProjects(){
     var rows = await selectAll('projects_desain');
     return rows.map(function(p){
       return { id:p.id, code:p.kode, name:p.nama, client:p.klien, type:p.tipe,
         start:p.periode_mulai||'', end:p.periode_selesai||'', pic:p.pic||'',
-        status:p.status, progress:Number(p.progres_persen)||0,
+        status: STATUS_PROJ_APP[p.status] || p.status, progress:Number(p.progres_persen)||0,
         konstruksi:!!p.konstruksi, notes:p.notes||'' };
     });
   }
@@ -1134,7 +1136,7 @@ async function storageSet(key, value){
     var rows = (list||[]).map(function(p){
       return { id:p.id||uid('pf_'), kode:p.code, nama:p.name, klien:p.client, tipe:p.type,
         periode_mulai:p.start||null, periode_selesai:p.end||null, pic:p.pic||null,
-        status:p.status, progres_persen:Number(p.progress)||0,
+        status: STATUS_PROJ_DB[p.status] || 'perencanaan', progres_persen:Number(p.progress)||0,
         konstruksi:!!p.konstruksi, notes:p.notes||null };
     });
     await replaceAll('projects_desain', rows);
