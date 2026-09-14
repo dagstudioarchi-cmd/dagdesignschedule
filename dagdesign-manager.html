@@ -34,7 +34,7 @@
   .shell{display:flex;min-height:100vh;}
   .sidebar{width:230px;flex-shrink:0;background:var(--navy);color:#fff;display:flex;flex-direction:column;padding:26px 18px;}
   .brand{display:flex;flex-direction:column;gap:2px;margin-bottom:34px;padding:0 6px;}
-  .brand .mark{height:30px;width:auto;margin-bottom:12px;display:block;}
+  .brand .mark{width:100%;max-width:170px;height:auto;margin-bottom:12px;display:block;}
   .brand .name{font-family:'Jost',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;}
   .brand .sub{font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:0.04em;text-transform:uppercase;margin-top:2px;}
   .nav{display:flex;flex-direction:column;gap:3px;}
@@ -402,7 +402,8 @@
   <div class="nav-backdrop" id="nav-backdrop"></div>
   <aside class="sidebar">
     <div class="brand">
-                      <div class="name">DAG Studio</div>
+      <img class="mark" src="assets/dag-logo-white.png" alt="DAG Studio">
+      <div class="name">DAG Studio</div>
       <div class="sub">Design Manager</div>
     </div>
     <nav class="nav" id="nav">
@@ -1111,9 +1112,11 @@ async function storageSet(key, value){
   async function selectAll(table){
     return chk(await sb.from(table).select('*'));
   }
+  var KEY_COL = { tahapan_dependencies: 'tahap_id' }; // tabel tanpa kolom id (composite key)
   async function replaceAll(table, rows){
     // "replace" penuh: hapus semua baris lama, masukkan yang baru — sama seperti perilaku backend lama
-    chk(await sb.from(table).delete().neq('id', '__none__'));
+    var col = KEY_COL[table] || 'id';
+    chk(await sb.from(table).delete().neq(col, '__none__'));
     if(rows && rows.length) chk(await sb.from(table).insert(rows));
   }
 
