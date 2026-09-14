@@ -1,0 +1,33 @@
+{
+  "name": "DAG Studio Perencanaan",
+  "short_name": "DAG Studio",
+  "description": "DAG Studio Perencanaan & Desain Management App",
+  "start_url": "./dag-perencanaan.html",
+  "scope": "./",
+  "id": "./dag-perencanaan.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0A0A0B",
+  "theme_color": "#0A0A0B",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "dag-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "dag-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "dag-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
